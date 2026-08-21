@@ -1,0 +1,24 @@
+{
+  "name": "be-namcaonguyen",
+  "version": "1.0.0",
+  "description": "Backend lưu câu hỏi và vị trí đáp án đúng cho extension",
+  "main": "src/index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "node --watch src/index.js",
+    "db:init": "node scripts/init-db.js",
+    "db:export": "node scripts/export-db.js",
+    "db:import": "node scripts/import-db.js",
+    "db:import:replace": "node scripts/import-db.js --replace"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "pg": "^8.13.1"
+  }
+}

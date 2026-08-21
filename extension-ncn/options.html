@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Cài đặt – Xuất mã nguồn</title>
+    <link rel="stylesheet" href="options.css" />
+  </head>
+  <body>
+    <main>
+      <h1>Cài đặt lưu file</h1>
+      <p class="lead">
+        Chrome lưu file vào thư mục <strong>Tải xuống (Downloads)</strong> của bạn. Bạn chỉ định
+        <strong>thư mục con</strong> bên trong Downloads (ví dụ để mở bằng VS Code).
+      </p>
+
+      <form id="options-form">
+        <label>
+          Thư mục con (trong Downloads)
+          <input
+            type="text"
+            id="subfolder"
+            name="subfolder"
+            placeholder="namcaonguyen-sources"
+            autocomplete="off"
+          />
+          <span class="hint">Ví dụ: <code>D:\Code\namcaonguyen</code> → nhập đường dẫn tương đối như <code>Code/namcaonguyen</code> nếu Downloads nằm ổ D, hoặc dùng đường dẫn đầy đủ trong tên (xem ghi chú bên dưới).</span>
+        </label>
+
+        <label class="checkbox">
+          <input type="checkbox" id="includeTimestamp" name="includeTimestamp" checked />
+          Thêm ngày giờ vào tên file (tránh ghi đè)
+        </label>
+
+        <label class="checkbox">
+          <input type="checkbox" id="saveAsDialog" name="saveAsDialog" />
+          Mỗi lần xuất hiện hộp thoại “Lưu thành” (chọn thư mục trực tiếp)
+        </label>
+
+        <label class="checkbox hidden" hidden>
+          <input type="checkbox" id="showFloatingBar" name="showFloatingBar" />
+          (Đã bỏ) Thanh nổi trên trang — dùng popup extension
+        </label>
+
+        <label class="checkbox">
+          <input type="checkbox" id="bypassDevtoolsDetect" name="bypassDevtoolsDetect" checked />
+          Chống script phát hiện F12 / DevTools (chèn trước trang web)
+        </label>
+
+        <label>
+          API trả lời (POST JSON)
+          <input
+            type="url"
+            id="answerApiUrl"
+            name="answerApiUrl"
+            placeholder="http://localhost:3003/api/answer"
+            autocomplete="off"
+          />
+          <span class="hint">Body: <code>questionTitle</code>, <code>question</code> (lowercase)</span>
+        </label>
+
+        <label>
+          API insert khi chưa có trong DB
+          <input
+            type="url"
+            id="insertApiUrl"
+            name="insertApiUrl"
+            placeholder="http://localhost:3003/api/insert"
+            autocomplete="off"
+          />
+          <span class="hint">Body: <code>questionTitle</code>, <code>question</code>, <code>answerPosition</code> (index 0-based)</span>
+        </label>
+
+        <label>
+          Server auto click (GET)
+          <input
+            type="url"
+            id="clickServerUrl"
+            name="clickServerUrl"
+            placeholder="http://127.0.0.1:8765/click"
+            autocomplete="off"
+          />
+          <span class="hint">Gọi dạng <code>?x=…&amp;y=…</code> — tọa độ screen, ngẫu nhiên trong ô đáp án / nút Tiếp</span>
+        </label>
+
+        <label>
+          Chờ trước khi click Tiếp (giây, ngẫu nhiên)
+          <span class="delay-range">
+            <input type="number" id="serverNextDelayMinSec" min="0" max="120" value="2" />
+            <span>→</span>
+            <input type="number" id="serverNextDelayMaxSec" min="0" max="120" value="5" />
+          </span>
+        </label>
+
+        <label>
+          Tỉ lệ chọn sai cố ý — Auto server (%)
+          <input
+            type="number"
+            id="intentionalWrongPercent"
+            min="0"
+            max="50"
+            value="5"
+            step="1"
+          />
+          <span class="hint">Ví dụ 5 = ~5% câu chọn đáp án khác (tránh nghi ngờ).</span>
+        </label>
+
+        <label class="checkbox">
+          <input type="checkbox" id="autoLookupIndex" name="autoLookupIndex" checked />
+          Tự tra index mỗi 1 giây khi đổi câu (đọc trang + so cache, gọi API nếu khác — không click)
+        </label>
+
+        <label class="checkbox">
+          <input type="checkbox" id="autoPickFirstOnNotFound" name="autoPickFirstOnNotFound" checked />
+          Chưa có trong DB → tự chọn index 0 và gửi insert
+        </label>
+
+        <label>
+          Index đáp án mặc định khi chưa có DB (0 = đáp án đầu)
+          <input type="number" id="defaultAnswerPosition" min="0" max="9" value="0" />
+        </label>
+
+        <label>
+          Delay trước khi chọn đáp án — ngẫu nhiên (giây)
+          <span class="delay-range">
+            <input type="number" id="answerDelayMinSec" min="0" max="600" value="3" />
+            <span>→</span>
+            <input type="number" id="answerDelayMaxSec" min="0" max="600" value="8" />
+          </span>
+          <span class="hint">Mỗi câu chờ ngẫu nhiên trong khoảng trên rồi mới chọn đáp án.</span>
+        </label>
+
+        <label>
+          Delay trước khi bấm Tiếp (giây, ngẫu nhiên)
+          <span class="delay-range">
+            <input type="number" id="nextDelayMinSec" min="0" max="120" value="1" />
+            <span>→</span>
+            <input type="number" id="nextDelayMaxSec" min="0" max="120" value="1" />
+          </span>
+        </label>
+
+        <label class="checkbox">
+          <input type="checkbox" id="autoClickNext" name="autoClickNext" checked />
+          Tự bấm nút Tiếp sau khi chọn đáp án
+        </label>
+
+        <label class="checkbox">
+          <input type="checkbox" id="alertOnNotFound" name="alertOnNotFound" checked />
+          Kêu chuông (5 tiếng) khi câu hỏi chưa có trong DB
+        </label>
+
+        <div class="note warn">
+          <strong>F12 vẫn bị đá khi refresh?</strong> Mở tab mới → F12 (hoặc Undock DevTools) → <em>sau đó</em> mới vào URL.
+          Guard giờ chạy ngay lúc tải trang; nếu DevTools đã mở sẵn trước khi vào, ít bị “lần đầu” hơn.
+        </div>
+
+        <div class="note">
+          <strong>Gợi ý Windows:</strong> Đặt Chrome tải về
+          <code>D:\2025\Linh\namcaocnguyen\sources</code> bằng cách bật “Lưu thành” ở trên, hoặc trong Chrome:
+          Cài đặt → Tải xuống → Vị trí → chọn thư mục <code>sources</code> trong project này, rồi để
+          <em>Thư mục con</em> trống hoặc <code>.</code>.
+        </div>
+
+        <button type="submit" class="primary">Lưu cài đặt</button>
+        <p id="save-status" class="status" aria-live="polite"></p>
+      </form>
+    </main>
+    <script src="options.js"></script>
+  </body>
+</html>

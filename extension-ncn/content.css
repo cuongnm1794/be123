@@ -1,0 +1,196 @@
+#ncn-export-bar {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  z-index: 2147483646;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px;
+  border-radius: 10px;
+  background: rgba(20, 24, 32, 0.92);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+  font-family: "Segoe UI", system-ui, sans-serif;
+  font-size: 12px;
+  color: #f5f7fa;
+}
+
+#ncn-export-bar .ncn-title {
+  font-weight: 600;
+  margin-bottom: 2px;
+  opacity: 0.9;
+}
+
+#ncn-export-bar button {
+  border: none;
+  border-radius: 6px;
+  padding: 8px 10px;
+  cursor: pointer;
+  background: #2f6fed;
+  color: #fff;
+  font-size: 12px;
+}
+
+#ncn-export-bar button.ncn-secondary {
+  background: #3d4654;
+}
+
+#ncn-export-bar button:hover {
+  filter: brightness(1.08);
+}
+
+#ncn-export-bar .ncn-status.ncn-status-log {
+  max-height: 220px;
+  overflow-y: auto;
+  font-family: Consolas, "Segoe UI", monospace;
+  font-size: 10px;
+  line-height: 1.35;
+  text-align: left;
+}
+
+#ncn-export-bar .ncn-status {
+  min-height: 14px;
+  font-size: 11px;
+  color: #9fe8c0;
+}
+
+#ncn-export-bar .ncn-status.error {
+  color: #ffb4a9;
+}
+
+#ncn-export-bar .ncn-close {
+  position: absolute;
+  top: 4px;
+  right: 6px;
+  background: transparent;
+  color: #9aa3b2;
+  padding: 2px 6px;
+  font-size: 14px;
+  line-height: 1;
+}
+
+#ncn-export-bar .ncn-auto-answer-btn {
+  background: #16a34a;
+  font-weight: 600;
+}
+
+#ncn-export-bar .ncn-lookup-manual-btn {
+  background: #ca8a04;
+  font-weight: 600;
+}
+
+#ncn-export-bar .ncn-push-result-btn {
+  background: #c2410c;
+  font-weight: 600;
+}
+
+#ncn-export-bar .ncn-answer-coords-btn {
+  background: #7c3aed;
+  font-weight: 600;
+}
+
+#ncn-export-bar .ncn-server-loop-btn {
+  background: #16a34a;
+  font-weight: 600;
+}
+
+#ncn-export-bar .ncn-server-loop-btn.ncn-server-loop-stop {
+  background: #dc2626;
+}
+
+#ncn-export-bar .ncn-status.ncn-status-coords {
+  font-family: Consolas, "Cascadia Mono", monospace;
+  font-size: 11px;
+  line-height: 1.45;
+  color: #c4b5fd;
+  white-space: pre-wrap;
+  user-select: all;
+  cursor: text;
+  max-height: 160px;
+  overflow-y: auto;
+}
+
+#ncn-export-bar .ncn-pick-only-btn {
+  background: #0d9488;
+  font-weight: 600;
+}
+
+#ncn-export-bar .ncn-status.ncn-status-index {
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.4;
+  color: #fde047;
+  white-space: pre-wrap;
+}
+
+#ncn-export-bar .ncn-test-next-btn {
+  background: #2563eb;
+  font-weight: 600;
+}
+
+#ncn-export-bar .ncn-status-btn {
+  background: #d97706;
+  font-weight: 600;
+}
+
+#ncn-export-bar .ncn-hidden {
+  display: none !important;
+}
+
+#ncn-export-bar .ncn-loop-btn {
+  background: #7c3aed;
+  font-weight: 600;
+}
+
+#ncn-export-bar .ncn-scroll-loop-btn {
+  background: #0891b2;
+  font-weight: 600;
+}
+
+#ncn-export-bar .ncn-scroll-loop-btn.ncn-scroll-loop-stop {
+  background: #dc2626;
+}
+
+#ncn-export-bar .ncn-loop-btn.ncn-loop-stop {
+  background: #dc2626;
+}
+
+#ncn-export-bar .ncn-xpath-label {
+  font-size: 11px;
+  opacity: 0.85;
+}
+
+#ncn-export-bar .ncn-xpath-input {
+  width: 260px;
+  box-sizing: border-box;
+  border: 1px solid #4b5563;
+  border-radius: 6px;
+  padding: 6px 8px;
+  background: #111827;
+  color: #f5f7fa;
+  font-size: 11px;
+  font-family: Consolas, monospace;
+}
+
+#ncn-export-bar .ncn-xpath-presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+#ncn-export-bar .ncn-preset {
+  padding: 4px 8px;
+  font-size: 10px;
+  background: #374151;
+  border-radius: 4px;
+}
+
+#ncn-export-bar .ncn-xpath-btn {
+  background: #2f6fed;
+}
+
+#ncn-export-bar .ncn-status {
+  white-space: pre-wrap;
+  word-break: break-all;
+  max-width: 260px;
+}

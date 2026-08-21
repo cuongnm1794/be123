@@ -1,0 +1,55 @@
+{
+  "manifest_version": 3,
+  "name": "Nam Cao Nguyên – Xuất mã nguồn",
+  "version": "1.11.0",
+  "description": "Xuất page source và script từ namcaonguyen.huelms.com để xem mã khi site chặn DevTools.",
+  "permissions": ["activeTab", "scripting", "downloads", "storage", "webNavigation"],
+  "host_permissions": [
+    "https://namcaonguyen.huelms.com/*",
+    "http://localhost:3003/*",
+    "http://127.0.0.1:8765/*"
+  ],
+  "action": {
+    "default_title": "Xuất mã nguồn",
+    "default_popup": "popup.html"
+  },
+  "options_ui": {
+    "page": "options.html",
+    "open_in_tab": true
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://namcaonguyen.huelms.com/*"],
+      "js": ["guard-inject.js"],
+      "run_at": "document_start",
+      "all_frames": true
+    },
+    {
+      "matches": ["https://namcaonguyen.huelms.com/*"],
+      "js": ["devtools-guard.js"],
+      "run_at": "document_start",
+      "world": "MAIN",
+      "all_frames": true
+    },
+    {
+      "matches": ["https://namcaonguyen.huelms.com/*"],
+      "js": ["xpath-click.js", "alert-sound.js", "ncn-log.js", "auto-answer.js", "simulation-auto.js", "content.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["devtools-guard.js"],
+      "matches": ["https://namcaonguyen.huelms.com/*"]
+    }
+  ],
+  "commands": {
+    "stop-all-loops": {
+      "suggested_key": { "default": "Ctrl+Shift+S" },
+      "description": "Dừng tất cả auto loop (trả lời + mô phỏng)"
+    }
+  }
+}

@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Nam Cao Nguyên</title>
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <header>
+      <h1>Nam Cao Nguyên</h1>
+      <p class="muted">Chỉ đọc trang LMS + click qua server — không UI/script trên trang</p>
+    </header>
+
+    <p id="site-warning" class="warning hidden"></p>
+
+    <div class="actions">
+      <button type="button" id="btn-lookup" class="primary">Tra index</button>
+      <button type="button" id="btn-push-result" class="primary">Gửi kết → BE</button>
+      <button type="button" id="btn-server-one" class="primary">Click đúng + Tiếp</button>
+      <button type="button" id="btn-server-loop" class="primary accent">Auto server</button>
+    </div>
+
+    <hr class="section-divider" />
+
+    <div class="actions">
+      <button type="button" id="btn-sim-lookup" class="primary">Lấy KQ mô phỏng</button>
+      <button type="button" id="btn-sim-calc" class="primary">Tính KQ mô phỏng</button>
+      <button type="button" id="btn-sim-auto" class="primary accent">Auto mô phỏng</button>
+    </div>
+
+    <label class="checkbox auto-lookup-row">
+      <input type="checkbox" id="chk-auto-lookup" checked />
+      Tự tra index mỗi giây (chỉ đọc trang + BE)
+    </label>
+
+    <p id="status" class="status" aria-live="polite"></p>
+
+    <div class="actions secondary-actions">
+      <button type="button" id="btn-html">Xuất page source (HTML)</button>
+      <button type="button" id="btn-scripts">Xuất danh sách script</button>
+      <button type="button" id="btn-both">Xuất cả hai</button>
+    </div>
+
+    <footer>
+      <a href="#" id="open-options">Cài đặt</a>
+    </footer>
+
+    <script type="module" src="popup.js"></script>
+  </body>
+</html>

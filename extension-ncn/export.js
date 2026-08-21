@@ -1,0 +1,50 @@
+/** @returns {Promise<{html: string, scripts: Array<object>, title: string, url: string}>} */
+export async function collectPageExport() {
+  const doctype = document.doctype
+    ? `<!DOCTYPE ${document.doctype.name}${document.doctype.publicId ? ` PUBLIC "${document.doctype.publicId}"` : ""}${document.doctype.systemId ? ` "${document.doctype.systemId}"` : ""}>`
+    : "<!DOCTYPE html>";
+
+  const html = `${doctype}\n${document.documentElement.outerHTML}`;
+
+  const scripts = [];
+  document.querySelectorAll("script").forEach((node, index) => {
+    scripts.push({
+      index,
+      src: node.src || null,
+      type: node.type || "text/javascript",
+      inline: !node.src,
+      content: node.src ? null : node.textContent || "",
+    });
+  });
+
+  const styles = [];
+  document.querySelectorAll("style").forEach((node, index) => {
+    styles.push({
+      index,
+      content: node.textContent || "",
+    });
+  });
+
+  return {
+    html,
+    scripts,
+    styles,
+    title: document.title || "untitled",
+    url: location.href,
+    exportedAt: new Date().toISOString(),
+  };
+}
+
+export function scriptsPayload(exportData) {
+  return JSON.stringify(
+    {
+      url: exportData.url,
+      title: exportData.title,
+      exportedAt: exportData.exportedAt,
+      scripts: exportData.scripts,
+      styles: exportData.styles,
+    },
+    null,
+    2
+  );
+}
