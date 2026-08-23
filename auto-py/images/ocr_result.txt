@@ -1,0 +1,24 @@
+Image: 1936x1168
+
+[full] -> '2'
+
+[title] (400, 130, 1100, 190)
+  -> Contransitionalists
+
+[header2] (400, 190, 900, 240)
+  -> Đó Ôn luyện
+
+[question] (400, 680, 1350, 760)
+  -> 031000000200
+
+[opt_a] (420, 760, 1100, 820)
+  -> Xe nào được quyền đi trước trong trường hợp này
+
+[opt_b] (420, 820, 1100, 880)
+  -> 002-Xe cháy đi là một mỹ và chảy.
+
+[btn_tiep] (1200, 900, 1400, 960)
+  -> Contermines
+
+[btn_ket_thuc] (1050, 200, 1350, 260)
+  -> Contractions
