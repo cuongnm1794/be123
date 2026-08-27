@@ -193,24 +193,41 @@
     };
   }
 
-  /** Lấy tọa độ màn hình của nút "Tiếp" */
+  /** Lấy tọa độ màn hình của nút "Tiếp" (ưu tiên đúng chữ "tiếp", bỏ qua "tiếp theo") */
   function getNextButtonCoords() {
     const btns = document.querySelectorAll("button.ant-btn-primary");
+    let fallback = null;
     for (const btn of btns) {
       const text = (btn.textContent || "").trim().toLowerCase();
-      if (text.includes("tiếp")) {
-        const span = btn.querySelector("span");
-        const target = span || btn;
-        const rect = target.getBoundingClientRect();
-        const borderLeft = window.outerWidth - window.innerWidth;
-        const borderTop = window.outerHeight - window.innerHeight;
-        const cx = rect.left + rect.width / 2;
-        const cy = rect.top + rect.height / 2;
-        return {
-          x: Math.round(window.screenX + borderLeft + cx),
-          y: Math.round(window.screenY + borderTop + cy),
-        };
+      if (!text.includes("tiếp")) continue;
+      if (text.includes("tiếp theo")) {
+        if (!fallback) fallback = btn;
+        continue;
       }
+      const span = btn.querySelector("span");
+      const target = span || btn;
+      const rect = target.getBoundingClientRect();
+      const borderLeft = window.outerWidth - window.innerWidth;
+      const borderTop = window.outerHeight - window.innerHeight;
+      const cx = rect.left + rect.width / 2;
+      const cy = rect.top + rect.height / 2;
+      return {
+        x: Math.round(window.screenX + borderLeft + cx),
+        y: Math.round(window.screenY + borderTop + cy),
+      };
+    }
+    if (fallback) {
+      const span = fallback.querySelector("span");
+      const target = span || fallback;
+      const rect = target.getBoundingClientRect();
+      const borderLeft = window.outerWidth - window.innerWidth;
+      const borderTop = window.outerHeight - window.innerHeight;
+      const cx = rect.left + rect.width / 2;
+      const cy = rect.top + rect.height / 2;
+      return {
+        x: Math.round(window.screenX + borderLeft + cx),
+        y: Math.round(window.screenY + borderTop + cy),
+      };
     }
     return null;
   }

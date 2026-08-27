@@ -213,6 +213,14 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
     (async () => {
       try {
         const settings = await getSettings();
+        // Đưa cửa sổ gửi lên trên cùng trước khi click để click OS đúng vào
+        // nút của cửa sổ này, không trúng nút "Tiếp theo" của cửa sổ khác
+        // đang đè lên (khi mở nhiều cửa sổ chồng nhau).
+        if (_sender?.tab?.windowId != null) {
+          await chrome.windows
+            .update(_sender.tab.windowId, { focused: true })
+            .catch(() => {});
+        }
         const data = await fetchAutoClick(
           message.x,
           message.y,
