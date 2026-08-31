@@ -27,6 +27,10 @@ async function load() {
     autoClickNext: true,
     alertOnNotFound: true,
     autoLookupIndex: true,
+    ncnUserId: 1,
+    defaultPassword: "123456",
+    curriculumPercent: 40,
+    practicePercent: 60,
   });
 
   document.getElementById("subfolder").value = data.subfolder;
@@ -55,6 +59,10 @@ async function load() {
   document.getElementById("nextDelayMaxSec").value = Math.round((data.nextDelayMaxMs ?? 1_000) / 1000);
   document.getElementById("autoClickNext").checked = data.autoClickNext !== false;
   document.getElementById("alertOnNotFound").checked = data.alertOnNotFound !== false;
+  document.getElementById("ncnUserId").value = data.ncnUserId ?? 1;
+  document.getElementById("defaultPassword").value = data.defaultPassword ?? "123456";
+  document.getElementById("curriculumPercent").value = data.curriculumPercent ?? 40;
+  document.getElementById("practicePercent").value = data.practicePercent ?? 60;
 }
 
 form.addEventListener("submit", async (e) => {
@@ -93,6 +101,16 @@ form.addEventListener("submit", async (e) => {
     nextDelayMaxMs: secToMs(document.getElementById("nextDelayMaxSec").value, 1),
     autoClickNext: document.getElementById("autoClickNext").checked,
     alertOnNotFound: document.getElementById("alertOnNotFound").checked,
+    ncnUserId: Math.max(1, Number(document.getElementById("ncnUserId").value) || 1),
+    defaultPassword: document.getElementById("defaultPassword").value || "123456",
+    curriculumPercent: Math.min(
+      100,
+      Math.max(0, Number(document.getElementById("curriculumPercent").value) || 40)
+    ),
+    practicePercent: Math.min(
+      100,
+      Math.max(0, Number(document.getElementById("practicePercent").value) || 60)
+    ),
   };
 
   if (payload.answerDelayMinMs > payload.answerDelayMaxMs) {

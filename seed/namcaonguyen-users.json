@@ -1,0 +1,27 @@
+{
+  "site": "namcaonguyen",
+  "default_password": "123456",
+  "batch": "ncn-batch-1",
+  "courses": [
+    {
+      "course_name": "Lý thuyết lái xe",
+      "description": "Bài học lý thuyết trên namcaonguyen.huelms.com",
+      "link": "https://namcaonguyen.huelms.com/my/home"
+    },
+    {
+      "course_name": "Mô phỏng các tình huống giao thông",
+      "description": "Ôn luyện mô phỏng",
+      "link": "https://namcaonguyen.huelms.com/learn/practice"
+    }
+  ],
+  "users": [
+    { "name": "Ý", "username": "067199004010", "is_running": true },
+    { "name": "Luyến", "username": "067188003393", "is_running": true },
+    { "name": "Nhung", "username": "067182000262", "is_running": true },
+    { "name": "Huy", "username": "067090002078", "is_running": true },
+    { "name": "Thắng", "username": "038081015728", "is_running": true },
+    { "name": "Anh", "username": "067204000717", "is_running": true },
+    { "name": "Hiếu", "username": "067086000248", "is_running": true },
+    { "name": "Hạnh", "username": "067085000633", "is_running": true }
+  ]
+}

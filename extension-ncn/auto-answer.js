@@ -260,12 +260,106 @@
     };
   }
 
+  function normalizeBtnText(t) {
+    return String(t || "").replace(/\s+/g, " ").trim();
+  }
+
+  /** Nút Tiếp visible — bỏ "Tiếp theo" và nút ẩn. */
+  function findVisibleNextButton() {
+    const buttons = document.querySelectorAll("button.ant-btn");
+    const candidates = [];
+    for (const btn of buttons) {
+      const text = normalizeBtnText(btn.textContent);
+      if (text !== "Tiếp" && !/^tiếp$/i.test(text)) continue;
+      if (/tiếp\s+theo/i.test(text)) continue;
+      const rect = btn.getBoundingClientRect();
+      if (rect.width < 4 || rect.height < 4) continue;
+      const style = getComputedStyle(btn);
+      if (style.visibility === "hidden" || style.display === "none") continue;
+      if (parseFloat(style.opacity || "1") < 0.05) continue;
+      if (!isRectInViewport(rect)) continue;
+      candidates.push({ btn, rect, area: rect.width * rect.height });
+    }
+    if (!candidates.length) {
+      if (window.NCN_XPATH?.getElementByXPath) {
+        const el = window.NCN_XPATH.getElementByXPath(XPATH_NEXT);
+        if (el) return el;
+      }
+      throw new Error("Không tìm thấy nút Tiếp visible.");
+    }
+    candidates.sort((a, b) => b.area - a.area);
+    return candidates[0].btn;
+  }
+
+  function isPointOnButton(clientX, clientY, button) {
+    const hit = document.elementFromPoint(clientX, clientY);
+    return Boolean(hit && button.contains(hit));
+  }
+
+  /** Random điểm trong nút — inset ~20%, hit-test phải trúng button. */
+  function randomPointInButton(button, padRatio = 0.2) {
+    const rect = button.getBoundingClientRect();
+    const padX = Math.max(3, Math.floor(rect.width * padRatio));
+    const padY = Math.max(3, Math.floor(rect.height * padRatio));
+    const xMin = rect.left + padX;
+    const xMax = rect.right - padX;
+    const yMin = rect.top + padY;
+    const yMax = rect.bottom - padY;
+
+    for (let attempt = 0; attempt < 20; attempt++) {
+      const clientX = Math.round(
+        xMin + Math.random() * Math.max(1, xMax - xMin)
+      );
+      const clientY = Math.round(
+        yMin + Math.random() * Math.max(1, yMax - yMin)
+      );
+      const clamped = clampClientPointToRect(clientX, clientY, rect);
+      if (isPointOnButton(clamped.clientX, clamped.clientY, button)) {
+        return clamped;
+      }
+    }
+
+    const mid = clampClientPointToRect(
+      rect.left + rect.width / 2,
+      rect.top + rect.height / 2,
+      rect
+    );
+    return mid;
+  }
+
+  function getNextButtonScreenCoordinates(button, options = {}) {
+    const randomize = options.randomize !== false;
+    const rect = button.getBoundingClientRect();
+    if (rect.width < 1 || rect.height < 1) {
+      throw new Error("Nút Tiếp không hiển thị (kích thước 0).");
+    }
+    if (options.requireInViewport !== false && !isRectInViewport(rect)) {
+      throw new Error(
+        "Nút Tiếp ngoài viewport — scroll tay hoặc dùng Loop scroll."
+      );
+    }
+    const point = randomize
+      ? randomPointInButton(button)
+      : clampClientPointToRect(
+          rect.left + rect.width / 2,
+          rect.top + rect.height / 2,
+          rect
+        );
+    const screen = clientToScreen(point.clientX, point.clientY);
+    return {
+      ...point,
+      ...screen,
+      randomize,
+      left: Math.round(rect.left),
+      top: Math.round(rect.top),
+      width: Math.round(rect.width),
+      height: Math.round(rect.height),
+    };
+  }
+
   function clickNextButton() {
     assertDomInteractionAllowed();
-    if (!window.NCN_XPATH?.getElementByXPath) {
-      throw new Error("Module click chưa sẵn sàng.");
-    }
-    const element = window.NCN_XPATH.getElementByXPath(XPATH_NEXT);
+    const element = findVisibleNextButton();
     window.NCN_XPATH.simulateMouseClick(element, { nativeOnly: true });
 
     return {
@@ -278,15 +372,9 @@
 
   /** Tọa độ nút Tiếp — ngẫu nhiên trong khung nút, không click DOM */
   function getNextButtonClickCoordinates(options = {}) {
-    if (!window.NCN_XPATH?.getElementByXPath) {
-      throw new Error("Module XPath chưa sẵn sàng.");
-    }
-    const element = window.NCN_XPATH.getElementByXPath(XPATH_NEXT);
-    const serverClick = options.serverClick === true;
-    const coords = getElementClickCoordinates(element, {
+    const element = findVisibleNextButton();
+    const coords = getNextButtonScreenCoordinates(element, {
       randomize: options.randomize !== false,
-      serverClick,
-      skipScroll: serverClick,
       requireInViewport: options.requireInViewport !== false,
     });
     return {
@@ -712,7 +800,7 @@
     const selectors = isAnswerRow
       ? ['input[type="radio"]', ".ant-radio", ".ant-radio-wrapper", "label"]
       : container.matches?.("button,[class*='ant-btn']")
-        ? []
+        ? ["span", ".ant-btn", "div"]
         : ["button", '[class*="ant-btn"]', "label"];
 
     let top = boxRect.bottom;
@@ -2211,6 +2299,7 @@
       const answerCoords = getAnswerCoordinatesAtIndex(panel, pickIndex, {
         randomize: true,
         serverClick: true,
+        requireInViewport: options.requireInViewport !== false,
       });
 
       if (onProgress) {
@@ -2249,6 +2338,7 @@
     const centerCoords = getAnswerCoordinatesAtIndex(panel, pickIndex, {
       randomize: false,
       serverClick: true,
+      requireInViewport: options.requireInViewport !== false,
     });
     lastClick = await invokeAutoClickServer(
       centerCoords.coords.screenX,
@@ -2634,6 +2724,7 @@
     resolveAnswerIndex0,
     clickAnswerElement,
     clickNextButton,
+    findVisibleNextButton,
     getNextButtonClickCoordinates,
     insertAnswerToApi,
     isPanelIncorrect,

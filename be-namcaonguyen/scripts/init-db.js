@@ -11,6 +11,7 @@ const sqlPath = join(__dirname, '..', 'sql', 'init.sql');
 const migratePath = join(__dirname, '..', 'sql', 'migrate-pending-answer.sql');
 const migrateTitlePath = join(__dirname, '..', 'sql', 'migrate-add-title.sql');
 const migrateSimulationPath = join(__dirname, '..', 'sql', 'migrate-simulation.sql');
+const migrateSimulationQuizPath = join(__dirname, '..', 'sql', 'migrate-simulation-quiz.sql');
 
 const client = new pg.Client({ connectionString: process.env.DATABASE_URL });
 
@@ -20,6 +21,7 @@ async function main() {
   await client.query(readFileSync(migratePath, 'utf8'));
   await client.query(readFileSync(migrateTitlePath, 'utf8'));
   await client.query(readFileSync(migrateSimulationPath, 'utf8'));
+  await client.query(readFileSync(migrateSimulationQuizPath, 'utf8'));
   console.log('Đã khởi tạo / migrate các bảng.');
   await client.end();
 }

@@ -1,46 +1,32 @@
-"""Seed 3 học viên từ info.txt vào DB auto_learning."""
+"""Seed NCN users — goi seed/seed_all.py."""
 
-import db
+import asyncio
+import sys
+from pathlib import Path
 
-DEFAULT_COURSE = {
-    "course_name": "Môn học Pháp Luật Giao thông Đường Bộ",
-    "link": "https://hoclythuyetlaixe.eco-tek.com.vn/slides/mon-hoc-phap-luat-giao-thong-uong-bo-315",
-}
-
-SEED_USERS = [
-    {"name": "Ý", "username": "067199004010"},
-    {"name": "Luyến", "username": "067188003393"},
-    {"name": "Nhung", "username": "067182000262"},
-]
+ROOT = Path(__file__).resolve().parent.parent
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
 
 
 async def seed_students() -> list[dict]:
-    await db.init_db()
-    course = await db.create_course(
-        DEFAULT_COURSE["course_name"],
-        "",
-        DEFAULT_COURSE["link"],
-    )
+    from seed.seed_all import seed_site
 
-    created: list[dict] = []
-    for item in SEED_USERS:
-        username = item["username"]
-        password = username
-        existing = await db.get_user_by_username(username)
-        if existing:
-            user = existing
-            print(f"  Da co user: {username} (id={user['id']})")
-        else:
-            user = await db.create_user(
-                username,
-                password,
-                name=item["name"],
-                is_running=True,
-            )
-            print(f"  Tao user: {item['name']} / {username} (id={user['id']})")
+    seed_dir = ROOT / "seed"
+    result = await seed_site(seed_dir / "namcaonguyen-users.json")
+    print(f"Seed xong {result['users_in_file']} hoc vien NCN")
+    return result
 
-        await db.create_user_course(user["id"], course["id"], 0)
-        created.append(user)
 
-    print(f"\nSeed xong {len(created)} hoc vien, khoa: {DEFAULT_COURSE['course_name']}")
-    return created
+if __name__ == "__main__":
+    from dotenv import load_dotenv
+
+    load_dotenv(ROOT / "accounts_db" / ".env")
+    from accounts_db import db
+
+    async def _main():
+        await db.init_db()
+        await seed_students()
+        await db.close_db()
+
+    asyncio.run(_main())

@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "Nam Cao Nguyên – Xuất mã nguồn",
-  "version": "1.11.0",
-  "description": "Xuất page source và script từ namcaonguyen.huelms.com để xem mã khi site chặn DevTools.",
+  "version": "1.18.3",
+  "description": "Auto mô phỏng quiz + flow đầy đủ + server click trên namcaonguyen.huelms.com.",
   "permissions": ["activeTab", "scripting", "downloads", "storage", "webNavigation", "windows"],
   "host_permissions": [
     "https://namcaonguyen.huelms.com/*",
@@ -36,7 +36,7 @@
     },
     {
       "matches": ["https://namcaonguyen.huelms.com/*"],
-      "js": ["xpath-click.js", "alert-sound.js", "ncn-log.js", "auto-answer.js", "simulation-auto.js", "content.js"],
+      "js": ["xpath-click.js", "alert-sound.js", "ncn-log.js", "profile-map.js", "auto-answer.js", "simulation-auto.js", "simulation-quiz-auto.js", "auto-learn.js", "auto-flow.js", "content.js"],
       "run_at": "document_idle"
     }
   ],
@@ -49,7 +49,7 @@
   "commands": {
     "stop-all-loops": {
       "suggested_key": { "default": "Ctrl+Shift+S" },
-      "description": "Dừng tất cả auto loop (trả lời + mô phỏng)"
+      "description": "Dừng tất cả auto (flow, loop, mô phỏng)"
     }
   }
 }

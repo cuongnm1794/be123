@@ -24,8 +24,16 @@ extension-ncn/*.html
 !extension-ncn/options.html
 !extension-ncn/popup.html
 
-# learning-py local artifacts
+# learning-py / dailoi local artifacts
 learning-py/chrome-profiles/
 learning-py/.env
 learning-py/screenshots/
+dailoi/chrome-profiles/
+dailoi/.env
+dailoi/electron/node_modules/
+dailoi/electron/dist/
+dailoi/electron/chrome-profiles/
+
+# accounts_db
+accounts_db/.env
 

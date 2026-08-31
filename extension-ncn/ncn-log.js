@@ -5,6 +5,29 @@
   const STORAGE_KEY = "ncnActivityLog";
   const MAX_ENTRIES = 120;
 
+  function isExtensionContextValid() {
+    try {
+      return Boolean(chrome?.runtime?.id);
+    } catch {
+      return false;
+    }
+  }
+
+  function safeSendMessage(message) {
+    if (!isExtensionContextValid()) {
+      return Promise.resolve(undefined);
+    }
+    try {
+      const result = chrome.runtime.sendMessage(message);
+      if (result && typeof result.then === "function") {
+        return result.catch(() => undefined);
+      }
+      return Promise.resolve(result);
+    } catch {
+      return Promise.resolve(undefined);
+    }
+  }
+
   const memory = [];
 
   function nowTime() {
@@ -20,6 +43,7 @@
   }
 
   function persist() {
+    if (!isExtensionContextValid()) return;
     const slice = memory.slice(-MAX_ENTRIES);
     chrome.storage.local.set({ [STORAGE_KEY]: slice }).catch(() => {});
   }
@@ -110,6 +134,11 @@
     clear,
     loadFromStorage,
     MAX_ENTRIES,
+  };
+
+  window.NCN_RUNTIME = {
+    isExtensionContextValid,
+    safeSendMessage,
   };
 
   loadFromStorage();

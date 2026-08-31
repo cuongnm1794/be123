@@ -17,15 +17,24 @@ const DOM_INTERACTION_BLOCKED = new Set([
 const DOM_INTERACTION_ERROR =
   "Đã tắt thao tác script trên trang — chỉ đọc DOM + click server (dùng popup).";
 
+function safeSendMessage(message) {
+  if (window.NCN_RUNTIME?.safeSendMessage) {
+    return window.NCN_RUNTIME.safeSendMessage(message);
+  }
+  try {
+    return chrome.runtime.sendMessage(message).catch(() => {});
+  } catch {
+    return Promise.resolve();
+  }
+}
+
 function broadcastPageStatus(text, opts = {}) {
-  chrome.runtime
-    .sendMessage({
-      type: "PAGE_STATUS",
-      text: text || "",
-      error: opts.error === true,
-      lookup: opts.lookup === true,
-    })
-    .catch(() => {});
+  safeSendMessage({
+    type: "PAGE_STATUS",
+    text: text || "",
+    error: opts.error === true,
+    lookup: opts.lookup === true,
+  });
 }
 
 const XPATH_PRESETS = {
@@ -58,9 +67,16 @@ const serverLoopState = {
   count: 0,
   loopBtn: null,
   statusEl: null,
+  lastNaturalComplete: false,
 };
 
 const simulationLoopState = {
+  running: false,
+  stopRequested: false,
+  count: 0,
+};
+
+const simulationQuizLoopState = {
   running: false,
   stopRequested: false,
   count: 0,
@@ -89,6 +105,76 @@ async function checkStopFlag() {
   } catch {
     return false;
   }
+}
+
+/** Popup nghi ngờ DevTools — cần giải captcha thủ công, dừng acc đó. */
+function isDevtoolsSuspicionPopup() {
+  const keyword = /devtools?/i;
+  const isVisible = (el) => {
+    if (!el || !el.getBoundingClientRect) return false;
+    const r = el.getBoundingClientRect();
+    if (r.width < 8 || r.height < 8) return false;
+    const cs = getComputedStyle(el);
+    return cs.display !== "none" && cs.visibility !== "hidden" && cs.opacity !== "0";
+  };
+
+  const dialogSelectors =
+    ".ant-modal-wrap, .ant-modal, .ant-modal-confirm, [role='dialog'], .ant-notification-notice";
+  for (const el of document.querySelectorAll(dialogSelectors)) {
+    if (!isVisible(el)) continue;
+    const text = (el.textContent || "").replace(/\s+/g, " ");
+    if (keyword.test(text)) return true;
+  }
+  return false;
+}
+
+let devtoolsSuspicionNotified = false;
+
+async function stopForDevtoolsSuspicion(source) {
+  if (!isDevtoolsSuspicionPopup()) return false;
+
+  const msg = `Phát hiện popup nghi ngờ DevTools (${source}) — dừng acc, cần giải captcha thủ công.`;
+  window.NCN_LOG?.log("flow", msg);
+  broadcastPageStatus(msg, { error: true });
+
+  serverLoopState.stopRequested = true;
+  loopState.stopRequested = true;
+  scrollLoopState.stopRequested = true;
+  simulationLoopState.stopRequested = true;
+  simulationQuizLoopState.stopRequested = true;
+
+  try {
+    window.NCN_ALERT?.playNotFoundChimes?.();
+  } catch {
+    /* ignore */
+  }
+
+  if (!devtoolsSuspicionNotified) {
+    devtoolsSuspicionNotified = true;
+    const settings = await chrome.storage.sync.get({ ncnUserId: 1 });
+    const userId = Number(settings.ncnUserId) || 1;
+    chrome.runtime
+      .sendMessage({
+        type: "DEVTOOLS_SUSPICION_DETECTED",
+        text: msg,
+        userId,
+      })
+      .catch(() => {});
+    chrome.runtime
+      .sendMessage({
+        type: "TELEGRAM_NOTIFY",
+        event: "devtools_suspicion",
+        userId,
+        message: msg,
+        pageUrl: location.href,
+      })
+      .catch(() => {});
+  }
+
+  if (window.NCN_AUTO_FLOW?.stop) {
+    await window.NCN_AUTO_FLOW.stop({ reason: "devtools_captcha" });
+  }
+  return true;
 }
 
 async function waitWithCountdown(delayMs, onProgress, label, shouldStop) {
@@ -141,10 +227,19 @@ async function loadAutoSettings() {
   return chrome.storage.sync.get({
     answerApiUrl: "http://localhost:3003/api/answer",
     insertApiUrl: "http://localhost:3003/api/insert",
+    simQuizAnswerApiUrl: "http://localhost:3003/api/simulation-quiz/answer",
+    simQuizInsertApiUrl: "http://localhost:3003/api/simulation-quiz/insert",
+    simQuizDebugApiUrl: "http://localhost:3003/api/simulation-quiz/debug",
+    simQuizInsertBatchApiUrl: "http://localhost:3003/api/simulation-quiz/insert-batch",
+    simQuizDebugEnabled: false,
     autoPickFirstOnNotFound: true,
     defaultAnswerPosition: 0,
-    answerDelayMinMs: 3_000,
-    answerDelayMaxMs: 8_000,
+    answerDelayMinMs: 800,
+    answerDelayMaxMs: 2_000,
+    simAnswerDelayMinMs: 300,
+    simAnswerDelayMaxMs: 700,
+    simVideoWatchMinMs: 18_000,
+    simVideoWatchMaxMs: 22_000,
     nextDelayMinMs: 1_000,
     nextDelayMaxMs: 1_000,
     autoClickNext: true,
@@ -180,6 +275,48 @@ async function runOneQuestionViaServerClick(apiUrl, clickApiUrl, options = {}) {
     clickApiUrl,
     options
   );
+}
+
+async function invokeAutoScroll(x, y, amount) {
+  const res = await chrome.runtime.sendMessage({
+    type: "FETCH_AUTO_SCROLL",
+    x,
+    y,
+    amount,
+  });
+  if (!res?.ok) {
+    throw new Error(res?.error || "Gọi server scroll thất bại");
+  }
+  return res.data;
+}
+
+/** Cuộn bằng con chuột vật lý (auto-py / pyautogui) — KHÔNG scroll DOM. */
+async function serverScrollIntoView(element, onProgress) {
+  const simQuiz = window.NCN_SIMULATION_QUIZ;
+  if (!element?.getBoundingClientRect || !simQuiz) return false;
+
+  const margin = 72;
+  const maxAttempts = 8;
+
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    const rect = element.getBoundingClientRect();
+    if (simQuiz.isRectInViewport(rect, margin)) {
+      return true;
+    }
+
+    const delta = simQuiz.getScrollDeltaForRect(rect, margin);
+    if (!delta) return true;
+
+    const anchor = simQuiz.getScrollAnchorScreenCoords();
+    if (onProgress) {
+      onProgress(`Python scroll ${delta > 0 ? "↑" : "↓"} (${attempt}/${maxAttempts})…`);
+    }
+    await invokeAutoScroll(anchor.screenX, anchor.screenY, delta);
+    await sleep(18 + Math.random() * 14);
+  }
+
+  const finalRect = element.getBoundingClientRect();
+  return simQuiz.isRectInViewport(finalRect, margin);
 }
 
 async function invokeAutoClick(x, y, clickApiUrl) {
@@ -264,6 +401,9 @@ async function runServerClickLoop() {
   if (scrollLoopState.running) {
     throw new Error("Scroll loop đang chạy — dừng trước.");
   }
+  if (simulationQuizLoopState.running) {
+    throw new Error("Auto mô phỏng quiz đang chạy — dừng trước.");
+  }
   if (!window.NCN_AUTO_ANSWER) {
     throw new Error("Module trả lời chưa sẵn sàng — tải lại trang.");
   }
@@ -273,6 +413,7 @@ async function runServerClickLoop() {
   serverLoopState.running = true;
   serverLoopState.stopRequested = false;
   serverLoopState.count = 0;
+  serverLoopState.lastNaturalComplete = false;
   updateServerLoopButton();
 
   const settings = await loadAutoSettings();
@@ -293,9 +434,15 @@ async function runServerClickLoop() {
   (async () => {
     try {
       while (!serverLoopState.stopRequested) {
+        if (await stopForDevtoolsSuspicion("auto server")) {
+          serverLoopState.stopRequested = true;
+          setProgress("Dừng — popup nghi ngờ DevTools (giải captcha thủ công).");
+          break;
+        }
+
         if (await checkStopFlag()) {
           serverLoopState.stopRequested = true;
-          setProgress("Dừng bởi hotkey Ctrl+Shift+Q");
+          setProgress("Dừng bởi hotkey Ctrl+F8");
           break;
         }
 
@@ -342,6 +489,7 @@ async function runServerClickLoop() {
     } finally {
       const done = serverLoopState.count;
       const wasStop = serverLoopState.stopRequested;
+      serverLoopState.lastNaturalComplete = !wasStop;
       serverLoopState.running = false;
       serverLoopState.stopRequested = false;
       updateServerLoopButton();
@@ -358,6 +506,7 @@ async function runServerClickLoop() {
           type: "SERVER_LOOP_STOPPED",
           count: done,
           text: finalMsg,
+          naturalComplete: !wasStop,
         })
         .catch(() => {});
 
@@ -378,6 +527,13 @@ async function runServerClickLoop() {
             "Không click được Kết thúc luyện thi",
             e?.message
           );
+        }
+
+        try {
+          await sleep(settings.serverEndTestDelayMs ?? 1_500);
+          await window.NCN_AUTO_FLOW?.handleServerLoopNaturalComplete?.();
+        } catch {
+          /* ignore */
         }
       }
 
@@ -1379,10 +1535,291 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
     return false;
   }
 
+  if (message?.type === "SIMULATION_QUIZ_LOOP_TOGGLE") {
+    if (simulationQuizLoopState.running) {
+      simulationQuizLoopState.stopRequested = true;
+      chrome.runtime.sendMessage({
+        type: "SIMULATION_QUIZ_LOOP_PROGRESS",
+        text: "Đang dừng auto mô phỏng quiz…",
+        running: true,
+        count: simulationQuizLoopState.count,
+      }).catch(() => {});
+      sendResponse({ ok: true, stopping: true });
+      return true;
+    }
+
+    const simQuiz = window.NCN_SIMULATION_QUIZ;
+    if (!simQuiz?.isSimulationQuizPage?.()) {
+      sendResponse({
+        ok: false,
+        error: "Không phải trang Ôn luyện mô phỏng (quiz) — cần practice-group-question + video.",
+      });
+      return true;
+    }
+
+    simulationQuizLoopState.running = true;
+    simulationQuizLoopState.stopRequested = false;
+    simulationQuizLoopState.count = 0;
+
+    if (serverLoopState.running) {
+      serverLoopState.stopRequested = true;
+    }
+    if (simulationLoopState.running) {
+      simulationLoopState.stopRequested = true;
+    }
+    if (scrollLoopState.running) {
+      scrollLoopState.stopRequested = true;
+    }
+
+    sendResponse({ ok: true, started: true });
+
+    (async () => {
+      const LOOP_TYPE = "SIMULATION_QUIZ_LOOP_PROGRESS";
+      function loopProgress(text, extra = {}) {
+        chrome.runtime.sendMessage({
+          type: LOOP_TYPE,
+          text,
+          running: simulationQuizLoopState.running,
+          count: simulationQuizLoopState.count,
+          ...extra,
+        }).catch(() => {});
+      }
+
+      async function sleepCheckStop(ms) {
+        const end = Date.now() + ms;
+        while (Date.now() < end) {
+          if (simulationQuizLoopState.stopRequested) return;
+          if (await checkStopFlag()) {
+            simulationQuizLoopState.stopRequested = true;
+            return;
+          }
+          const remaining = Math.min(400, Math.max(0, end - Date.now()));
+          await sleep(remaining);
+        }
+      }
+
+      try {
+        const settings = await loadAutoSettings();
+        stopAutoLookupPoller();
+
+        while (simulationQuizLoopState.running && !simulationQuizLoopState.stopRequested) {
+          if (await checkStopFlag()) {
+            simulationQuizLoopState.stopRequested = true;
+            loopProgress("Dừng bởi hotkey Ctrl+F8");
+            break;
+          }
+
+          if (await stopForDevtoolsSuspicion("sim quiz auto")) {
+            simulationQuizLoopState.stopRequested = true;
+            break;
+          }
+
+          if (!window.NCN_SIMULATION_QUIZ?.isSimulationQuizPage?.()) {
+            loopProgress("Không còn ở trang mô phỏng quiz — chờ…");
+            await sleepCheckStop(3000);
+            continue;
+          }
+
+          simulationQuizLoopState.count += 1;
+          const c = simulationQuizLoopState.count;
+          const label = `[${c}] `;
+
+          loopProgress(`${label}Bắt đầu tình huống…`);
+
+          try {
+            const result = await window.NCN_SIMULATION_QUIZ.runOneSituationViaServer(
+              settings,
+              {
+                onProgress: (text) => loopProgress(`${label}${text}`),
+                serverScrollIntoView: (el, prog) =>
+                  serverScrollIntoView(el, (t) =>
+                    loopProgress(`${label}${prog ? prog + " — " : ""}${t}`)
+                  ),
+                pythonScroll: (x, y, amount) => invokeAutoScroll(x, y, amount),
+                shouldStop: () => simulationQuizLoopState.stopRequested,
+              }
+            );
+            loopProgress(
+              `${label}Xong — ${result.syncedCount}/${result.panelCount} cập nhật DB`,
+              { syncedCount: result.syncedCount }
+            );
+          } catch (err) {
+            if (err?.message === "STOP_REQUESTED") break;
+            loopProgress(`${label}Lỗi: ${err?.message || String(err)}`, { error: true });
+            await sleepCheckStop(3000);
+          }
+
+          await sleepCheckStop(settings.loopWaitAfterNextMs ?? 2500);
+        }
+      } catch (err) {
+        loopProgress(`Lỗi loop: ${err?.message || String(err)}`, { error: true });
+      } finally {
+        simulationQuizLoopState.running = false;
+        simulationQuizLoopState.stopRequested = false;
+        chrome.runtime.sendMessage({
+          type: "SIMULATION_QUIZ_LOOP_STOPPED",
+          text: `Đã dừng auto mô phỏng quiz (${simulationQuizLoopState.count} tình huống)`,
+          count: simulationQuizLoopState.count,
+        }).catch(() => {});
+        if (autoLookupState.enabled) {
+          startAutoLookupPoller(null);
+        }
+      }
+    })();
+    return true;
+  }
+
+  if (message?.type === "SIMULATION_QUIZ_LOOP_STATUS") {
+    sendResponse({
+      ok: true,
+      running: simulationQuizLoopState.running,
+      count: simulationQuizLoopState.count,
+      stopRequested: simulationQuizLoopState.stopRequested,
+      isQuizPage: window.NCN_SIMULATION_QUIZ?.isSimulationQuizPage?.() === true,
+    });
+    return false;
+  }
+
   if (message?.type === "STOP_ALL") {
     serverLoopState.stopRequested = true;
     simulationLoopState.stopRequested = true;
+    simulationQuizLoopState.stopRequested = true;
     loopState.stopRequested = true;
+    scrollLoopState.stopRequested = true;
+    if (window.NCN_AUTO_LEARN?.stop) {
+      window.NCN_AUTO_LEARN.stop();
+    }
+    if (window.NCN_AUTO_FLOW?.stop) {
+      window.NCN_AUTO_FLOW.stop({ reason: "hotkey" });
+    }
+    sendResponse({ ok: true });
+    return true;
+  }
+
+  if (message?.type === "AUTO_FLOW_TOGGLE") {
+    (async () => {
+      try {
+        if (!window.NCN_AUTO_FLOW) {
+          throw new Error("Module auto flow chưa sẵn sàng — tải lại trang.");
+        }
+        const st = window.NCN_AUTO_FLOW.status();
+        let wantRun;
+        if (message.start === true) wantRun = true;
+        else if (message.start === false) wantRun = false;
+        else wantRun = !st.running;
+        const res = wantRun
+          ? await window.NCN_AUTO_FLOW.start({
+              userId: message.userId,
+              navigateLogin: message.navigateLogin,
+            })
+          : await window.NCN_AUTO_FLOW.stop();
+        sendResponse({ ok: true, running: res.running });
+      } catch (err) {
+        sendResponse({ ok: false, error: err?.message || String(err) });
+      }
+    })();
+    return true;
+  }
+
+  if (message?.type === "AUTO_FLOW_STATUS") {
+    try {
+      if (!window.NCN_AUTO_FLOW) {
+        throw new Error("Module auto flow chưa sẵn sàng — tải lại trang.");
+      }
+      sendResponse({ ok: true, status: window.NCN_AUTO_FLOW.status() });
+    } catch (err) {
+      sendResponse({ ok: false, error: err?.message || String(err) });
+    }
+    return true;
+  }
+
+  if (message?.type === "PRACTICE_ROUNDS_TOGGLE") {
+    (async () => {
+      try {
+        if (!window.NCN_AUTO_FLOW) {
+          throw new Error("Module auto flow chưa sẵn sàng — tải lại trang.");
+        }
+        const st = window.NCN_AUTO_FLOW.status();
+        let wantRun;
+        if (message.start === true) wantRun = true;
+        else if (message.start === false) wantRun = false;
+        else wantRun = !(st.running && st.mode === "practice");
+
+        const res = wantRun
+          ? await window.NCN_AUTO_FLOW.startPracticeRounds({
+              userId: message.userId,
+              maxRounds: message.maxRounds,
+            })
+          : await window.NCN_AUTO_FLOW.stop();
+        sendResponse({
+          ok: true,
+          running: res.running,
+          mode: res.mode || st.mode,
+        });
+      } catch (err) {
+        sendResponse({ ok: false, error: err?.message || String(err) });
+      }
+    })();
+    return true;
+  }
+
+  if (message?.type === "PRACTICE_ROUNDS_STATUS") {
+    try {
+      if (!window.NCN_AUTO_FLOW) {
+        throw new Error("Module auto flow chưa sẵn sàng — tải lại trang.");
+      }
+      const st = window.NCN_AUTO_FLOW.status();
+      sendResponse({
+        ok: true,
+        running: st.running && st.mode === "practice",
+        status: st,
+      });
+    } catch (err) {
+      sendResponse({ ok: false, error: err?.message || String(err) });
+    }
+    return true;
+  }
+
+  if (message?.type === "AUTO_LEARN_TOGGLE") {
+    (async () => {
+      try {
+        if (!window.NCN_AUTO_LEARN) {
+          throw new Error("Module auto học chưa sẵn sàng — tải lại trang.");
+        }
+        const st = window.NCN_AUTO_LEARN.status();
+        let wantRun;
+        if (message.start === true) wantRun = true;
+        else if (message.start === false) wantRun = false;
+        else wantRun = !st.running;
+        const res = wantRun
+          ? await window.NCN_AUTO_LEARN.start({
+              targetHours: message.targetHours,
+            })
+          : await window.NCN_AUTO_LEARN.stop();
+        sendResponse({ ok: true, running: res.running });
+      } catch (err) {
+        sendResponse({ ok: false, error: err?.message || String(err) });
+      }
+    })();
+    return true;
+  }
+
+  if (message?.type === "AUTO_LEARN_STATUS") {
+    try {
+      if (!window.NCN_AUTO_LEARN) {
+        throw new Error("Module auto học chưa sẵn sàng — tải lại trang.");
+      }
+      sendResponse({ ok: true, status: window.NCN_AUTO_LEARN.status() });
+    } catch (err) {
+      sendResponse({ ok: false, error: err?.message || String(err) });
+    }
+    return true;
+  }
+
+  if (message?.type === "FOCUS_WINDOW") {
+    chrome.runtime
+      .sendMessage({ type: "FOCUS_WINDOW", fromContent: true })
+      .catch(() => {});
     sendResponse({ ok: true });
     return true;
   }
@@ -1469,6 +1906,10 @@ function getActiveQuestionKey() {
 }
 
 function tickAutoLookup() {
+  if (!window.NCN_RUNTIME?.isExtensionContextValid?.()) {
+    stopAutoLookupPoller();
+    return;
+  }
   if (!autoLookupState.enabled || autoLookupState.busy) return;
 
   const key = getActiveQuestionKey();
@@ -1570,5 +2011,23 @@ async function init() {
     startAutoLookupPoller(null);
   }
 }
+
+window.NCN_CONTENT_API = {
+  toggleServerLoop: () => runServerClickLoop(),
+  toggleScrollLoop: () => runScrollLoop(),
+  serverLoopStatus: () => ({
+    running: serverLoopState.running,
+    count: serverLoopState.count,
+    stopRequested: serverLoopState.stopRequested,
+    lastNaturalComplete: serverLoopState.lastNaturalComplete,
+  }),
+  ackServerLoopComplete: () => {
+    serverLoopState.lastNaturalComplete = false;
+  },
+  scrollLoopStatus: () => ({
+    running: scrollLoopState.running,
+    count: scrollLoopState.count,
+  }),
+};
 
 init();

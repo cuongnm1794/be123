@@ -1,0 +1,37 @@
+{
+  "site": "dailoi",
+  "default_password": "123456",
+  "batch": "dailoi-batch-1",
+  "courses": [
+    {
+      "course_name": "Môn học Pháp Luật Giao thông Đường Bộ",
+      "description": "",
+      "link": "https://hoclythuyetlaixe.eco-tek.com.vn/slides/mon-hoc-phap-luat-giao-thong-uong-bo-315"
+    },
+    {
+      "course_name": "Môn học kĩ thuật lái xe ô tô",
+      "description": "",
+      "link": "https://hoclythuyetlaixe.eco-tek.com.vn/slides/mon-hoc-ki-thuat-lai-xe-o-to"
+    },
+    {
+      "course_name": "Môn học Đạo Đức Người Lái Xe & Phòng Cháy Chữa Cháy",
+      "description": "",
+      "link": "https://hoclythuyetlaixe.eco-tek.com.vn/slides/mon-hoc-dao-duc-nguoi-lai-xe-phong-chay-chua-chay"
+    },
+    {
+      "course_name": "Cấu tạo và sửa chữa thông thường xe ô tô",
+      "description": "",
+      "link": "https://hoclythuyetlaixe.eco-tek.com.vn/slides/cau-tao-va-sua-chua-thong-thuong-xe-o-to"
+    },
+    {
+      "course_name": "Khoá học mô phỏng",
+      "description": "",
+      "link": "https://hoclythuyetlaixe.eco-tek.com.vn/slides/khoa-hoc-mo-phong"
+    }
+  ],
+  "users": [
+    { "name": "NGUYỄN THỊ HẰNG", "username": "040173018490", "is_running": false },
+    { "name": "HÀ VĂN ĐIỀN", "username": "067070001939", "is_running": false },
+    { "name": "TRẦN THỊ PHƯƠNG TÂM", "username": "040178028436", "is_running": false }
+  ]
+}

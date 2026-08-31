@@ -183,6 +183,66 @@ button.primary.accent:hover {
   background: #15803d;
 }
 
+button.primary.learn {
+  border-color: #d97706;
+  background: #d97706;
+}
+
+button.primary.learn:hover {
+  background: #b45309;
+}
+
+button.primary.learn.learn-stop {
+  border-color: #dc2626;
+  background: #dc2626;
+}
+
+button.primary.learn.learn-stop:hover {
+  background: #b91c1c;
+}
+
+button.primary.flow {
+  border-color: #059669;
+  background: #059669;
+}
+
+button.primary.flow:hover {
+  background: #047857;
+}
+
+button.primary.flow.flow-stop {
+  border-color: #dc2626;
+  background: #dc2626;
+}
+
+button.primary.flow.flow-stop:hover {
+  background: #b91c1c;
+}
+
+button.primary.practice-x3 {
+  border-color: #7c3aed;
+  background: #7c3aed;
+}
+
+button.primary.practice-x3:hover {
+  background: #6d28d9;
+}
+
+button.primary.practice-x3.practice-x3-stop {
+  border-color: #dc2626;
+  background: #dc2626;
+}
+
+button.primary.practice-x3.practice-x3-stop:hover {
+  background: #b91c1c;
+}
+
+.status.small {
+  font-size: 11px;
+  color: #5c6370;
+  margin: 6px 0 0;
+}
+
 button.primary.pick-only {
   border-color: #0d9488;
   background: #0d9488;

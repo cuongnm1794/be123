@@ -79,8 +79,36 @@
             placeholder="http://127.0.0.1:8765/click"
             autocomplete="off"
           />
-          <span class="hint">Gọi dạng <code>?x=…&amp;y=…</code> — tọa độ screen, ngẫu nhiên trong ô đáp án / nút Tiếp</span>
+          <span class="hint">Gọi dạng <code>?x=…&amp;y=…</code> — tọa độ screen. Dừng: <strong>Ctrl+F8</strong> (khi chạy auto-py) hoặc <strong>Ctrl+Shift+S</strong> (phím extension).</span>
         </label>
+
+        <h2 class="section-title">Auto flow (login → học)</h2>
+
+        <label>
+          Học viên (user_id — khớp profile Chrome user-{id})
+          <input type="number" id="ncnUserId" min="1" max="99" value="1" />
+          <span class="hint">1=Ý, 2=Luyến, 3=Nhung, 4=Huy — mỗi cửa sổ Chrome user-{id} cấu hình riêng, bấm <strong>Lưu</strong> sau khi đổi.</span>
+        </label>
+
+        <label>
+          Mật khẩu đăng nhập
+          <input type="text" id="defaultPassword" value="123456" autocomplete="off" />
+        </label>
+
+        <label>
+          Ngưỡng tiến độ Số giờ — Xem giáo trình (%)
+          <input type="number" id="curriculumPercent" min="0" max="100" value="40" />
+        </label>
+
+        <label>
+          Ngưỡng tiến độ Số giờ — Ôn luyện (%)
+          <input type="number" id="practicePercent" min="0" max="100" value="60" />
+        </label>
+
+        <div class="note">
+          <strong>Telegram:</strong> Cấu hình 1 lần trong <code>auto-py/notify.env</code> (xem <code>notify.env.example</code>).
+          Mọi profile gửi thông báo qua <code>http://127.0.0.1:8765/notify?user_id=…</code> — không cần nhập token trên từng Chrome.
+        </div>
 
         <label>
           Chờ trước khi click Tiếp (giây, ngẫu nhiên)
@@ -122,9 +150,9 @@
         <label>
           Delay trước khi chọn đáp án — ngẫu nhiên (giây)
           <span class="delay-range">
-            <input type="number" id="answerDelayMinSec" min="0" max="600" value="3" />
+            <input type="number" id="answerDelayMinSec" min="0" max="600" value="0.8" />
             <span>→</span>
-            <input type="number" id="answerDelayMaxSec" min="0" max="600" value="8" />
+            <input type="number" id="answerDelayMaxSec" min="0" max="600" value="2" />
           </span>
           <span class="hint">Mỗi câu chờ ngẫu nhiên trong khoảng trên rồi mới chọn đáp án.</span>
         </label>

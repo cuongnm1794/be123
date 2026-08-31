@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Electron Auto Learning System</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🎓 Hệ Thống Học Tự Động</h1>
+            <div class="header-actions">
+                <button id="refreshBtn" class="btn btn-secondary">🔄 Làm mới</button>
+            </div>
+        </header>
+
+        <div class="tabs">
+            <button class="tab-btn active" data-tab="users">👥 Người dùng</button>
+            <button class="tab-btn" data-tab="courses">📚 Khóa học</button>
+            <button class="tab-btn" data-tab="automation">🤖 Tự động hóa</button>
+            <button class="tab-btn" data-tab="logs">📋 Nhật ký</button>
+        </div>
+
+        <div class="tab-content active" id="users">
+            <div class="section-header">
+                <h2>Quản lý người dùng</h2>
+                <button id="addUserBtn" class="btn btn-primary">➕ Thêm người dùng</button>
+            </div>
+
+            <div id="addUserForm" class="form-container" style="display: none;">
+                <h3>Thêm người dùng mới</h3>
+                <form id="userForm">
+                    <div class="form-group">
+                        <label>Username:</label>
+                        <input type="text" id="username" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Password:</label>
+                        <input type="password" id="password" required>
+                    </div>
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary">Lưu</button>
+                        <button type="button" id="cancelUserBtn" class="btn btn-secondary">Hủy</button>
+                    </div>
+                </form>
+            </div>
+
+            <div id="usersList" class="data-list"></div>
+        </div>
+
+        <div class="tab-content" id="courses">
+            <div class="section-header">
+                <h2>Quản lý khóa học</h2>
+                <button id="addCourseBtn" class="btn btn-primary">➕ Thêm khóa học</button>
+            </div>
+
+            <div id="addCourseForm" class="form-container" style="display: none;">
+                <h3>Thêm khóa học mới</h3>
+                <form id="courseForm">
+                    <div class="form-group">
+                        <label>Tên khóa học:</label>
+                        <input type="text" id="courseName" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Mô tả:</label>
+                        <textarea id="courseDescription" rows="3"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>Link:</label>
+                        <input type="url" id="courseLink" required>
+                    </div>
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary">Lưu</button>
+                        <button type="button" id="cancelCourseBtn" class="btn btn-secondary">Hủy</button>
+                    </div>
+                </form>
+            </div>
+
+            <div id="coursesList" class="data-list"></div>
+        </div>
+
+        <div class="tab-content" id="automation">
+            <div class="section-header">
+                <h2>Tự động hóa học tập</h2>
+                <div>
+                    <button id="startAllBtn" class="btn btn-success">▶️ Chạy tất cả</button>
+                    <button id="stopAllBtn" class="btn btn-danger">⏹️ Dừng tất cả</button>
+                </div>
+            </div>
+
+            <div id="automationList" class="automation-list"></div>
+        </div>
+
+        <div class="tab-content" id="logs">
+            <div class="section-header">
+                <h2>Nhật ký hoạt động</h2>
+                <div>
+                    <select id="logUserFilter">
+                        <option value="">Tất cả người dùng</option>
+                    </select>
+                    <button id="refreshLogsBtn" class="btn btn-secondary">🔄 Làm mới</button>
+                </div>
+            </div>
+
+            <div id="logsList" class="logs-list"></div>
+        </div>
+    </div>
+
+    <div id="progressModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <h3 id="progressTitle">Đang xử lý...</h3>
+            <div class="progress-bar">
+                <div id="progressBarFill" class="progress-fill"></div>
+            </div>
+            <p id="progressMessage">Đang khởi tạo...</p>
+        </div>
+    </div>
+
+    <script src="renderer.js"></script>
+</body>
+</html>

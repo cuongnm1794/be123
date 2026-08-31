@@ -1,0 +1,13 @@
+{
+  "name": "extension-ncn-tests",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test:mo-phong-3": "node test-mo-phong-3-read.mjs"
+  },
+  "dependencies": {
+    "linkedom": "^0.18.12",
+    "xpath": "^0.0.34",
+    "@xmldom/xmldom": "^0.9.8"
+  }
+}
